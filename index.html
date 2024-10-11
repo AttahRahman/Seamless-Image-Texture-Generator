@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seamless Texture Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #app-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        #upload-container {
+            margin-bottom: 20px;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        label {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        label:hover {
+            background-color: #0056b3;
+        }
+        #canvas {
+            display: none;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 100%;
+        }
+        #download {
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            border: none;
+            transition: background-color 0.3s ease;
+            display: none;
+        }
+        #download:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <h1>Seamless Texture Generator</h1>
+        <div id="upload-container">
+            <label for="upload">Upload Image</label>
+            <input type="file" id="upload" accept="image/jpeg, image/png" />
+        </div>
+        <canvas id="canvas"></canvas>
+        <button id="download">Download Image</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const upload = document.getElementById('upload');
+        const downloadButton = document.getElementById('download');
+
+        upload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const img = new Image();
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                img.src = event.target.result;
+            };
+            
+            img.onload = function() {
+                // Resize the canvas to the size of the image
+                canvas.width = img.width;
+                canvas.height = img.height;
+
+                // Draw the original image
+                ctx.drawImage(img, 0, 0);
+
+                // Blend the edges
+                blendEdges(img);
+
+                // Show the canvas and download button after processing
+                canvas.style.display = 'block';
+                downloadButton.style.display = 'inline-block';
+            };
+
+            reader.readAsDataURL(file);
+        });
+
+        downloadButton.addEventListener('click', function() {
+            // Create a temporary link element
+            const link = document.createElement('a');
+            link.download = 'seamless-texture.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+
+        function blendEdges(img) {
+            const width = img.width;
+            const height = img.height;
+            const edgeSize = Math.min(width, height) * 0.1; // Blend 10% of the image size
+
+            // Horizontal blending (left and right edges)
+            for (let x = 0; x < edgeSize; x++) {
+                const alpha = x / edgeSize;
+
+                // Left edge blending
+                ctx.globalAlpha = 1 - alpha;
+                ctx.drawImage(canvas, x, 0, 1, height, width - x, 0, 1, height);
+
+                // Right edge blending
+                ctx.globalAlpha = 1 - alpha;
+                ctx.drawImage(canvas, width - x - 1, 0, 1, height, x, 0, 1, height);
+            }
+
+            // Vertical blending (top and bottom edges)
+            for (let y = 0; y < edgeSize; y++) {
+                const alpha = y / edgeSize;
+
+                // Top edge blending
+                ctx.globalAlpha = 1 - alpha;
+                ctx.drawImage(canvas, 0, y, width, 1, 0, height - y, width, 1);
+
+                // Bottom edge blending
+                ctx.globalAlpha = 1 - alpha;
+                ctx.drawImage(canvas, 0, height - y - 1, width, 1, 0, y, width, 1);
+            }
+
+            // Reset globalAlpha for future operations
+            ctx.globalAlpha = 1.0;
+        }
+    </script>
+</body>
+</html>
